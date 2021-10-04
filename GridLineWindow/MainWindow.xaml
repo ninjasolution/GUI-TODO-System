@@ -1,0 +1,780 @@
+﻿<Window x:Class="GridLineWindow.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:local="clr-namespace:GridLineWindow"
+        xmlns:viewModel="clr-namespace:GridLineWindow.ViewModel"
+        xmlns:i="http://schemas.microsoft.com/expression/2010/interactivity"
+        mc:Ignorable="d"
+        Top="50"
+        Left="60"
+        Background="Transparent"
+        WindowStyle="ToolWindow" ResizeMode="CanResizeWithGrip"
+        Title="Groping" Height="900" Width="1800">
+
+    <Window.DataContext>
+        <viewModel:MainWindow_VM/>
+    </Window.DataContext>
+
+    <Window.Resources>
+        
+        <Style TargetType="{x:Type ListViewItem}">
+            <Style.Triggers>
+                <Trigger Property="IsSelected" Value="False">
+                    <Setter Property="Background" Value="PaleGoldenrod" />
+                </Trigger>
+                <Trigger Property="IsSelected" Value="True">
+                    <Setter Property="Background" Value="Red" />
+                </Trigger>
+            </Style.Triggers>
+        </Style>
+
+        <Style x:Key="GeneralInput" TargetType="{x:Type TextBox}">
+            <Setter Property="Background" Value="Transparent"/>
+            <Setter Property="BorderThickness" Value="0 0 0 1"/>
+            <Setter Property="BorderBrush" Value="Purple"/>
+            <Setter Property="FontSize" Value="20"/>
+    
+        </Style>
+
+        <Style x:Key="FadeOutButton" TargetType="{x:Type Button}">
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border Background="Transparent">
+                            <ContentPresenter/>
+                        </Border>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+            <Style.Triggers>
+                <EventTrigger RoutedEvent="Control.MouseEnter">
+                    <BeginStoryboard>
+                        <Storyboard >
+                            <DoubleAnimation Duration="0:0:0.2" To="1" Storyboard.TargetProperty="Opacity"/>
+                        </Storyboard>
+                    </BeginStoryboard>
+                </EventTrigger>
+                <EventTrigger RoutedEvent="Control.MouseLeave">
+                    <BeginStoryboard>
+                        <Storyboard >
+                            <DoubleAnimation Duration="0:0:0.2" To="0.02" Storyboard.TargetProperty="Opacity"/>
+                        </Storyboard>
+                    </BeginStoryboard>
+                </EventTrigger>
+            </Style.Triggers>
+        </Style>
+
+
+        <ControlTemplate TargetType="{x:Type Button}" x:Key="DetailButton">
+            <Image VerticalAlignment="Center" HorizontalAlignment="Center" Source="/Resources/search-1.png">
+                <Image.Effect>
+                    <DropShadowEffect Direction="-45" Color="#ffffff" ShadowDepth="2" BlurRadius="10" />
+                </Image.Effect>
+            </Image>
+        </ControlTemplate>
+
+        <ControlTemplate TargetType="{x:Type Button}" x:Key="EditButton">
+            <Image VerticalAlignment="Center" HorizontalAlignment="Center" Source="/Resources/edit.png"/>
+        </ControlTemplate>
+
+        <ControlTemplate TargetType="{x:Type Button}" x:Key="DeleteButton">
+            <Image VerticalAlignment="Center" HorizontalAlignment="Center" Source="/Resources/delete.png"/>
+        </ControlTemplate>
+
+        <Style x:Key="BaseAnimationsStyle" TargetType="{x:Type Image}">
+            <Style.Triggers>
+                <Trigger Property="FrameworkElement.Visibility" Value="Visible">
+                    <Trigger.EnterActions>
+                        <!-- this works -->
+                        <BeginStoryboard>
+                            <Storyboard>
+                                <DoubleAnimation Storyboard.TargetProperty="(Image.Opacity)" From="0" To="1" Duration="0:0:3" />
+                            </Storyboard>
+                        </BeginStoryboard>
+                    </Trigger.EnterActions>
+                    <Trigger.ExitActions>
+                        <!-- this doesn't -->
+                        <BeginStoryboard>
+                            <Storyboard>
+                                <DoubleAnimation Storyboard.TargetProperty="(Image.Opacity)" From="1" To="0" Duration="0:0:3" />
+                            </Storyboard>
+                        </BeginStoryboard>
+                    </Trigger.ExitActions>
+                </Trigger>
+            </Style.Triggers>
+        </Style>
+
+        <DrawingBrush x:Key="GridTile" Stretch="None" TileMode="Tile"
+            Viewport="{Binding GridRect}" ViewportUnits="Absolute">
+
+            <DrawingBrush.Drawing>
+                <GeometryDrawing>
+                    <GeometryDrawing.Geometry>
+                        <!-- draw a single X -->
+                        <GeometryGroup>
+                            <!-- top-left to bottom-right -->
+                            <LineGeometry StartPoint="0,0" EndPoint="{Binding EndPoint, Mode=TwoWay, NotifyOnSourceUpdated=True, UpdateSourceTrigger=PropertyChanged}" />
+
+                            <!-- bottom-left to top-right -->
+                            <LineGeometry StartPoint="{Binding StartPoint, Mode=TwoWay, NotifyOnSourceUpdated=True, UpdateSourceTrigger=PropertyChanged}" EndPoint="0,0" />
+
+                        </GeometryGroup>
+                    </GeometryDrawing.Geometry>
+                    <GeometryDrawing.Pen>
+                        <!-- set color and thickness of lines -->
+                        <Pen Thickness="1" Brush="Black" />
+                    </GeometryDrawing.Pen>
+                </GeometryDrawing>
+            </DrawingBrush.Drawing>
+        </DrawingBrush>
+
+        <DrawingBrush x:Key="OffsetGrid" Stretch="None" AlignmentX="Left" AlignmentY="Top">
+            <DrawingBrush.Transform>
+                <!-- set the left and top offsets -->
+                <TranslateTransform X="30" Y="0" />
+            </DrawingBrush.Transform>
+            <DrawingBrush.Drawing>
+                <GeometryDrawing Brush="{StaticResource GridTile}" >
+                    <GeometryDrawing.Geometry>
+                        <!-- set the width and height filled with the tile from the origin -->
+                        <RectangleGeometry Rect="0 0 1090 640"/>
+                    </GeometryDrawing.Geometry>
+                </GeometryDrawing>
+            </DrawingBrush.Drawing>
+        </DrawingBrush>
+
+        <ControlTemplate TargetType="{x:Type Button}" x:Key="CloseButton">
+            <Image VerticalAlignment="Center" HorizontalAlignment="Center" Source="/Resources/close.png"/>
+        </ControlTemplate>
+
+        <ControlTemplate TargetType="{x:Type Button}" x:Key="SearchButton">
+            <Image VerticalAlignment="Center" HorizontalAlignment="Center" Source="/Resources/search-3.png"/>
+        </ControlTemplate>
+
+        <ControlTemplate TargetType="{x:Type Button}" x:Key="AddButton">
+            <Image VerticalAlignment="Center" HorizontalAlignment="Center" Source="/Resources/add.png"/>
+        </ControlTemplate>
+
+        <ControlTemplate TargetType="{x:Type Button}" x:Key="NewButton">
+            <Image VerticalAlignment="Center" HorizontalAlignment="Center" Source="/Resources/new.png"/>
+        </ControlTemplate>
+        <ControlTemplate TargetType="{x:Type Button}" x:Key="SaveButton">
+            <Image VerticalAlignment="Center" HorizontalAlignment="Center" Source="/Resources/save.png"/>
+        </ControlTemplate>
+        <ControlTemplate TargetType="{x:Type Button}" x:Key="SaveASButton">
+            <Image VerticalAlignment="Center" HorizontalAlignment="Center" Source="/Resources/save as.png"/>
+        </ControlTemplate>
+        <ControlTemplate TargetType="{x:Type Button}" x:Key="OpenButton">
+            <Image VerticalAlignment="Center" HorizontalAlignment="Center" Source="/Resources/open.png"/>
+        </ControlTemplate>
+
+        <ControlTemplate TargetType="{x:Type Button}" x:Key="CategoryButton">
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="30"/>
+                    <ColumnDefinition Width="100"/>
+                    <ColumnDefinition Width="30"/>
+                </Grid.ColumnDefinitions>
+                <Image Grid.Column="0" VerticalAlignment="Center" HorizontalAlignment="Center" Source="{Binding Url}" Width="20"/>
+                <TextBlock Grid.Column="1" Text="{Binding Name}" FontSize="20" Foreground="White"/>
+                <!--<Image Grid.Column="2" VerticalAlignment="Center" HorizontalAlignment="Center" Source="/Resources/expand-arrow.png"/>-->
+            </Grid>
+            
+        </ControlTemplate>
+
+        <ControlTemplate TargetType="{x:Type ComboBox}" x:Key="FileCombobox">
+            <Border Name="border" 
+                CornerRadius="1" 
+                BorderThickness="0 0 0 2"
+                BorderBrush="Blue"
+                Background="Transparent">
+                <TextBlock Text="None" FontSize="30" HorizontalAlignment="Center" VerticalAlignment="Center" Foreground="White"/>
+            </Border>
+            <ControlTemplate.Triggers>
+                <!--TODO: Set the right colors-->
+                <Trigger Property="IsMouseOver" Value="True">
+                    <Setter Property="Foreground" Value="#FF333333" />
+                </Trigger>
+
+            </ControlTemplate.Triggers>
+        </ControlTemplate>
+
+        <Style x:Key="SliderRepeatButtonStyle" TargetType="{x:Type RepeatButton}">
+            <Setter Property="OverridesDefaultStyle" Value="true"/>
+            <Setter Property="IsTabStop" Value="false"/>
+            <Setter Property="Focusable" Value="True"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="{x:Type RepeatButton}">
+                        <Border Background="#34000000" Height="20" CornerRadius="10"/>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <Style x:Key="LampadaThumbStyle" TargetType="{x:Type Thumb}">
+            <Setter Property="Focusable" Value="false"/>
+            <Setter Property="OverridesDefaultStyle" Value="true"/>
+            <Setter Property="Height" Value="20"/>
+            <Setter Property="Width" Value="20"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="{x:Type Thumb}">
+                        <Canvas SnapsToDevicePixels="true">
+                            <!--<Ellipse Width="20" Height="20" Fill="Green"  />-->
+                            <Image Source="/Resources/slider.png" Width="17"/>
+
+                        </Canvas>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <Style x:Key="LampadaSliderStyle" TargetType="{x:Type Slider}">
+            <Setter Property="Stylus.IsPressAndHoldEnabled" Value="false"/>
+            <Setter Property="Background" Value="Black"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="{x:Type Slider}">
+                        <Border Background="Transparent" SnapsToDevicePixels="true">
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition MinWidth="1100" Width="Auto"/>
+                                </Grid.ColumnDefinitions>
+
+                                <Canvas Margin="-1,-6">
+                                    <Rectangle x:Name="PART_SelectionRange" 
+                                               Fill="Firebrick" 
+                                               Stroke="Beige" 
+                                               StrokeThickness="1.0" 
+                                               Visibility="Hidden" 
+                                               Width="4.0"/>
+                                </Canvas>
+                                <Track x:Name="PART_Track">
+                                    <Track.DecreaseRepeatButton>
+                                        <RepeatButton Command="{x:Static Slider.DecreaseLarge}" Style="{StaticResource SliderRepeatButtonStyle}"/>
+                                    </Track.DecreaseRepeatButton>
+                                    <Track.IncreaseRepeatButton>
+                                        <RepeatButton Command="{x:Static Slider.IncreaseLarge}" Style="{StaticResource SliderRepeatButtonStyle}"/>
+                                    </Track.IncreaseRepeatButton>
+                                    <Track.Thumb>
+                                        <Thumb x:Name="Thumb" Style="{DynamicResource LampadaThumbStyle}"/>
+                                    </Track.Thumb>
+                                </Track>
+                            </Grid>
+                        </Border>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <Style x:Key="tile" TargetType="{x:Type Button}">
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate>
+                        <Border BorderThickness="{Binding Border}" BorderBrush="Azure">
+                            <Canvas Width="300" Height="300" Background="{Binding Background}">
+                                <Image Source="{Binding Url}" 
+                            Width="300" Height="300"
+                            Style="{StaticResource BaseAnimationsStyle}"/>
+                                <StackPanel Orientation="Vertical" Margin="0 50 0 0" HorizontalAlignment="Center">
+                                    <!--<TextBox Text="{Binding Name, Mode=TwoWay}" Foreground="White"/>
+                                <TextBox Text="{Binding TimeStamp}" Foreground="White"/>-->
+                                </StackPanel>
+                                
+                            </Canvas>
+                            <Border.Effect>
+                                <DropShadowEffect Direction="225" Color="#9e9e9e" ShadowDepth="10" BlurRadius="10" />
+                            </Border.Effect>
+                        </Border>
+                        
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+            
+        </Style>
+       
+
+    </Window.Resources>
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+
+    <Border Background="#929292">
+
+        <!--<Grid>
+
+            <Grid.RowDefinitions>
+                <RowDefinition Height="50"/>
+                <RowDefinition Height="*"/>
+            </Grid.RowDefinitions>
+            <Border Background="#9f0fdf09" CornerRadius="30 0 0 0">
+                <Grid HorizontalAlignment="Right" Width="{Binding WindowWidth}">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="200"/>
+                        <ColumnDefinition Width="1530"/>
+                        <ColumnDefinition Width="70"/>
+                    </Grid.ColumnDefinitions>
+                    <Image Grid.Column="0" Source="Resources/logo.png" Margin="20 0 0 0" HorizontalAlignment="Left"/>
+                    <Button Content="dd" Grid.Column="2" Template="{StaticResource CloseButton}" Click="onClose">
+                        <Button.RenderTransform>
+                            <ScaleTransform x:Name="MyAnimatedScaleTransform" ScaleX="1" ScaleY="1"  />
+                        </Button.RenderTransform>
+                        <Button.Triggers>
+
+                            <EventTrigger RoutedEvent="Button.MouseEnter">
+                                <BeginStoryboard>
+                                    <Storyboard>
+                                        <DoubleAnimation
+                                            Storyboard.TargetName="MyAnimatedScaleTransform"
+                                            Storyboard.TargetProperty="(ScaleTransform.ScaleX)"
+                                            To="1.03" Duration="0:0:0.1" AutoReverse="True"/>
+                                        <DoubleAnimation
+                                            Storyboard.TargetName="MyAnimatedScaleTransform"
+                                            Storyboard.TargetProperty="(ScaleTransform.ScaleY)"
+                                            To="1.03" Duration="0:0:0.1" AutoReverse="True"/>
+                                    </Storyboard>
+                                </BeginStoryboard>
+                            </EventTrigger>
+                        </Button.Triggers>
+                    </Button>
+                </Grid>
+
+            </Border>-->
+
+            <Grid Grid.Row="1">
+
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="200"/>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="400"/>
+                </Grid.ColumnDefinitions>
+
+                <Grid>
+
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="200"/>
+                        <RowDefinition Height="50"/>
+                        <RowDefinition Height="*"/>
+                    </Grid.RowDefinitions>
+
+                    <Canvas Margin="0 40 0 0">
+                        <Image Source="/Resources/background.jpg" Width="200" Style="{StaticResource BaseAnimationsStyle}"/>
+                        <Button Style="{StaticResource FadeOutButton}"
+                                Height="150"
+                               Name="Test"
+                               Opacity="0.4">
+                            <Grid VerticalAlignment="Top" HorizontalAlignment="Center" Width="200" Height="135" Background="#20000000">
+                                <Button Template="{StaticResource DetailButton}" Width="50" HorizontalAlignment="Center"/>
+                            </Grid>
+
+                        </Button>
+
+                    </Canvas>
+
+                <StackPanel Grid.Row="1" Orientation="Horizontal" HorizontalAlignment="Right">
+                    <Button Width="100" Template="{StaticResource NewButton }" Command="{Binding ToggleSidebarCommand}"> </Button>
+                </StackPanel>
+
+                    <Grid Grid.Row="2" Visibility="{Binding ShowSidebar, Mode=TwoWay}">
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="150"/>
+                            <RowDefinition Height="400"/>
+                        </Grid.RowDefinitions>
+                        <Border Grid.Row="0" BorderBrush="AntiqueWhite" BorderThickness="0 0 0 2">
+                            <Grid>
+                                <Grid.RowDefinitions>
+                                    <RowDefinition Height="70"/>
+                                    <RowDefinition Height="70"/>
+                                </Grid.RowDefinitions>
+                                <Border Background="White" CornerRadius="25" Height="50">
+                                    <Grid>
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="50"/>
+                                            <ColumnDefinition Width="*"/>
+                                        </Grid.ColumnDefinitions>
+                                        <Border Background="Aqua" CornerRadius="25"  BorderThickness="2" BorderBrush="Black">
+                                            <Image Source="/Resources/user.png" Margin="0.5 0 0 0"/>
+                                        </Border>
+                                        <TextBlock Text="Name: Maksym" Grid.Column="1" Foreground="#4f4f4f" FontSize="20" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                    </Grid>
+                                    <Border.Effect>
+                                        <DropShadowEffect Direction="225" Color="#2d2d30" ShadowDepth="10" BlurRadius="10" />
+                                    </Border.Effect>
+                                </Border>
+                                <Grid Grid.Row="1">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="120"/>
+                                        <ColumnDefinition Width="*"/>
+                                    </Grid.ColumnDefinitions>
+                                    <TextBlock Text="Log out" FontSize="30" Foreground="White" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                    <Image Grid.Column="1" Source="/Resources/logout.png" Width="40">
+                                        <Image.Effect>
+                                            <DropShadowEffect Direction="225" Color="#2d2d30" ShadowDepth="10" BlurRadius="10" />
+                                        </Image.Effect>
+                                    </Image>
+
+                                </Grid>
+                            </Grid>
+                        </Border>
+
+                        <Border Grid.Row="1" CornerRadius="10 10 10 10"  Background="#2d2d30" Margin="0 20 0 0">
+                            <Grid Margin="0 20 0 0">
+
+                                <Grid.RowDefinitions>
+                                    <RowDefinition  Height="50"/>
+                                    <RowDefinition  Height="50"/>
+                                    <RowDefinition  Height="*"/>
+                                </Grid.RowDefinitions>
+
+                                <Border BorderBrush="White" BorderThickness="0 0 0 1" Width="180" Opacity="0.7">
+                                    <Grid Margin="5">
+
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="auto"/>
+                                            <ColumnDefinition Width="*"/>
+                                        </Grid.ColumnDefinitions>
+
+                                        <Image Source="/Resources/dashboard.png" Width="30"/>
+                                        <TextBlock Grid.Column="1" Text="Dashboard" FontSize="20" Foreground="White" HorizontalAlignment="Center" VerticalAlignment="Center" />
+
+                                    </Grid>
+                                </Border>
+
+
+                                <TextBlock Grid.Row="1" Text="Categories" FontSize="30" Foreground="White" VerticalAlignment="Center" Opacity="0.7" Margin="10,0,0,0"/>
+
+                                <StackPanel Orientation="Vertical" Grid.Row="2">
+
+                                    <ItemsControl ItemsSource="{Binding Categories}">
+                                        <ItemsControl.ItemTemplate>
+                                            <DataTemplate>
+                                                <Button Template="{StaticResource CategoryButton}" Content="{Binding Name}" Height="30" Margin="10">
+
+                                                    <Button.RenderTransform>
+                                                        <ScaleTransform x:Name="MyAnimatedScaleTransform" ScaleX="1" ScaleY="1"  />
+                                                    </Button.RenderTransform>
+                                                    <Button.Triggers>
+
+                                                        <EventTrigger RoutedEvent="Button.MouseEnter">
+                                                            <BeginStoryboard>
+                                                                <Storyboard>
+                                                                    <DoubleAnimation
+                                                                        Storyboard.TargetName="MyAnimatedScaleTransform"
+                                                                        Storyboard.TargetProperty="(ScaleTransform.ScaleX)"
+                                                                        To="1.03" Duration="0:0:0.1" AutoReverse="True"/>
+                                                                    <DoubleAnimation
+                                                                        Storyboard.TargetName="MyAnimatedScaleTransform"
+                                                                        Storyboard.TargetProperty="(ScaleTransform.ScaleY)"
+                                                                        To="1.03" Duration="0:0:0.1" AutoReverse="True"/>
+                                                                </Storyboard>
+                                                            </BeginStoryboard>
+                                                        </EventTrigger>
+                                                    </Button.Triggers>
+                                                </Button>
+                                            </DataTemplate>
+                                        </ItemsControl.ItemTemplate>
+                                    </ItemsControl>
+
+                                </StackPanel>
+
+                            </Grid>
+                            <Border.Effect>
+                                <DropShadowEffect Direction="-45" Color="#02ffffff" ShadowDepth="2" BlurRadius="10" />
+                            </Border.Effect>
+                        </Border>
+
+                    </Grid>
+
+                
+                </Grid>
+
+                <Grid Grid.Column="1">
+
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="100"/>
+                        <RowDefinition Height="*"/>
+                    </Grid.RowDefinitions>
+
+                    <Border BorderBrush="#7f00ffff" BorderThickness="0 0 0 1" Width="1200" Padding="20">
+
+                        <Grid>
+
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="750"/>
+                                <ColumnDefinition Width="*"/>
+                            </Grid.ColumnDefinitions>
+
+                            <TextBox Height="40" Margin="30 0 0 0"  VerticalAlignment="Bottom">
+                                <TextBox.Style>
+                                    <Style TargetType="{x:Type TextBox}" >
+                                        <Setter Property="OverridesDefaultStyle" Value="True" />
+                                        <Setter Property="SnapsToDevicePixels" Value="True" />
+                                        <Setter Property="Foreground" Value="White" />
+                                        <Setter Property="Template">
+                                            <Setter.Value>
+                                                <ControlTemplate>
+
+                                                    <Border CornerRadius="10" Background="#3ff7f8fb">
+                                                        <Grid>
+                                                            <Grid.ColumnDefinitions>
+                                                                <ColumnDefinition Width="100"/>
+                                                                <ColumnDefinition Width="*"/>
+                                                            </Grid.ColumnDefinitions>
+                                                            <Button Template="{StaticResource SearchButton}" Grid.Column="0" Background="Transparent"/>
+                                                            <!--<TextBlock Text ="sdfdas" Grid.Column="1"/>-->
+                                                            <TextBox FontSize="25" Grid.Column="1" Background="Transparent" BorderThickness="0"/>
+                                                        </Grid>
+                                                        <!--<TextBlock Text ="{TemplateBinding ElementName=Pro:PosTextBox, Path= Pro:PosType}"></TextBlock>-->
+                                                        <Border.Effect>
+                                                            <DropShadowEffect Direction="225" Color="#5f000000" ShadowDepth="10" BlurRadius="10" />
+                                                        </Border.Effect>
+                                                    </Border>
+
+                                                </ControlTemplate>
+                                            </Setter.Value>
+                                        </Setter>
+                                    </Style>
+                                </TextBox.Style>
+                            </TextBox>
+
+                            <Border CornerRadius="10" Background="#007f80" Grid.Column="1" Height="40" Margin="30 0 0 0" VerticalAlignment="Bottom">
+                                <StackPanel Orientation="Horizontal">
+                                    <Button Template="{StaticResource AddButton}" Margin="15 0 0 0"/>
+                                    <Button Template="{StaticResource NewButton}" Margin="15 0 0 0"  Command="{Binding NewGroupCommand}"/>
+                                    <Button Template="{StaticResource OpenButton}" Margin="15 0 0 0" Command="{Binding OpenProjectCommand}"/>
+                                    <Button Template="{StaticResource SaveButton}" Margin="15 0 0 0" Command="{Binding SaveProjectCommand}"/>
+                                    <Button Template="{StaticResource SaveASButton}" Margin="15 0 0 0"/>
+                                    <ToggleButton IsChecked="{Binding IsChecked, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" Width="50" Height="40" Background="Transparent" Margin="15 0 0 0">
+
+                                        <ToggleButton.Style>
+                                            <Style TargetType="{x:Type ToggleButton}">
+                                                <Setter Property="Content">
+                                                    <Setter.Value>
+                                                        <Border BorderThickness="0"  >
+                                                            <Image Source="/Resources/toggle_on.png"/>
+                                                        </Border>
+                                                    </Setter.Value>
+                                                </Setter>
+                                                <Style.Triggers>
+                                                    <Trigger Property="IsChecked" Value="True">
+                                                        <Setter Property="Content">
+                                                            <Setter.Value>
+                                                                <Border  BorderThickness="0" >
+                                                                    <Image Source="/Resources/toggle_off.png"/>
+                                                                </Border>
+                                                            </Setter.Value>
+                                                        </Setter>
+                                                    </Trigger>
+                                                </Style.Triggers>
+                                            </Style>
+                                        </ToggleButton.Style>
+
+                                    </ToggleButton>
+                                </StackPanel>
+                                <Border.Effect>
+                                    <DropShadowEffect Direction="225" Color="#2d2d30" ShadowDepth="10" BlurRadius="10" />
+                                </Border.Effect>
+                            </Border>
+                        </Grid>
+
+                    </Border>
+
+                    <Border Grid.Row="1" Margin="20 20 10 10" Background="#ffffff" CornerRadius="0 0 30 0">
+
+                        <Grid  >
+
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="50"/>
+                                <RowDefinition Height="*"/>
+                            </Grid.RowDefinitions>
+
+                            <Slider
+                            Width="1100"
+                            Maximum="50" 
+                            Minimum="10"
+                            Orientation="Horizontal" 
+                            HorizontalAlignment="Center"
+                            Height="20" 
+                            Value="{Binding SliderValue, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                            Style="{DynamicResource LampadaSliderStyle}" />
+
+                            
+
+                                <Grid Grid.Row="1" Background="{StaticResource OffsetGrid}">
+
+                                    <!--<ListView ItemsSource="{Binding Groups, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" Width="1100" Margin="10 0 0 0" Background="Transparent" SelectedItem="{Binding SelectedGroupItem, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}">
+                                        <ListView.ItemsPanel>
+                                            <ItemsPanelTemplate>
+                                                --><!--<Canvas />--><!--
+                                            <UniformGrid Columns="{Binding GridCount}"/>
+                                            </ItemsPanelTemplate>
+                                        </ListView.ItemsPanel>
+                                        <ListView.ItemTemplate>
+                                            <DataTemplate>
+                                                <Canvas  Margin="{Binding Margin, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}">
+                                                    <Image Source="{Binding Url}" Style="{StaticResource BaseAnimationsStyle}"/>
+                                                    <Canvas.Effect>
+                                                        <DropShadowEffect Direction="225" Color="#9e9e9e" ShadowDepth="10" BlurRadius="10" />
+                                                    </Canvas.Effect>
+                                                </Canvas>
+                                            </DataTemplate>
+                                    
+                                        </ListView.ItemTemplate>
+                                        
+                                    </ListView>-->
+                            <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Auto" Width="1100" Height="630">
+                                <ItemsControl ItemsSource="{Binding Groups, Mode=TwoWay}"  Margin="10 0 0 0" Background="Transparent">
+                                    <ItemsControl.ItemsPanel>
+                                        <ItemsPanelTemplate>
+                                            <Canvas Width="1100" Height="1200"/>
+                                        </ItemsPanelTemplate>
+                                    </ItemsControl.ItemsPanel>
+                                    <ItemsControl.ItemTemplate>
+                                        <DataTemplate>
+                                            
+                                            <Button Margin="{Binding Margin}" Command="{Binding Action}" CommandParameter="{Binding}" Style="{StaticResource tile}"/>
+
+                                        </DataTemplate>
+                                    </ItemsControl.ItemTemplate>    
+                                </ItemsControl>
+
+                            </ScrollViewer>
+                            </Grid>
+
+
+                        </Grid>
+
+                    </Border>
+                </Grid>
+
+                <Grid Grid.Column="2">
+                    <Border Background="Azure">
+                        <Grid>
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="200"/>
+                                <RowDefinition Height="50"/>
+                                <RowDefinition Height="*"/>
+                            </Grid.RowDefinitions>
+                            <Grid HorizontalAlignment="Left">
+                                <Border CornerRadius="50" Width="100" Height="100" BorderBrush="Black" BorderThickness="1" Margin="100 0 0 0">
+                                    <Image Source="/Resources/logo-7.png" Width="70"/>
+                                    <Border.Effect>
+                                        <DropShadowEffect Direction="225" Color="Black" ShadowDepth="10" BlurRadius="10" />
+                                    </Border.Effect>
+                                </Border>
+                                
+                            </Grid>
+                            <Grid Grid.Row="1">
+                                <StackPanel  Orientation="Horizontal" Background="#cad4ef" >
+                                <Button  Template="{StaticResource AddButton}" Margin="15 0 0 0" Command="{Binding NewBtnCommand}"/>
+                                <Button Template="{StaticResource SaveButton}" Margin="15 0 0 0" Command="{Binding SaveBtnCommand}"/>
+                                <Button Template="{StaticResource SaveASButton}" Margin="15 0 0 0"/>
+                                <Button Template="{StaticResource EditButton}" Margin="15 0 0 0" Command="{Binding EditBtnCommand}" Visibility="{Binding GroupActionState, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"/>
+                                <Button Template="{StaticResource DeleteButton}" Margin="15 0 0 0" Command="{Binding DeleteBtnCommand}" Visibility="{Binding GroupActionState, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"/>
+                                </StackPanel>
+                            </Grid>
+                            <Grid Grid.Row="2" Visibility="{Binding GroupActionState}">
+
+                                <Grid Visibility="{Binding IsOnlyShow}">
+                                    <Grid.RowDefinitions>
+                                        <RowDefinition Height="50"/>
+                                        <RowDefinition Height="50"/>
+                                    </Grid.RowDefinitions>
+                                    <Grid>
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="120"/>
+                                            <ColumnDefinition Width="*"/>
+                                        </Grid.ColumnDefinitions>
+                                        <TextBlock Text="Name:" FontSize="20" HorizontalAlignment="Center" VerticalAlignment="Bottom"/>
+                                        <TextBlock Grid.Column="1" Text="{Binding SelectedGroupItem.Name}" FontSize="20" HorizontalAlignment="Center" VerticalAlignment="Bottom"/>
+                                    </Grid>
+                                    
+                                    <Grid Grid.Row="1">
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="120"/>
+                                            <ColumnDefinition Width="*"/>
+                                        </Grid.ColumnDefinitions>
+                                        <TextBlock Text="Time:" FontSize="20" HorizontalAlignment="Center" VerticalAlignment="Bottom"/>
+                                        <TextBlock Grid.Column="1" Text="{Binding SelectedGroupItem.TimeSpan}" FontSize="20" HorizontalAlignment="Center" VerticalAlignment="Bottom"/>
+                                    </Grid>
+                                </Grid>
+
+                                <Grid Visibility="{Binding IsEdit}">
+                                    <Grid.RowDefinitions>
+                                        <RowDefinition Height="50"/>
+                                        <RowDefinition Height="50"/>
+                                        <RowDefinition Height="50"/>
+                                        <RowDefinition Height="50"/>
+                                    </Grid.RowDefinitions>
+                                    <Grid>
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="120"/>
+                                            <ColumnDefinition Width="*"/>
+                                        </Grid.ColumnDefinitions>
+                                        <TextBlock Text="Name:"  FontSize="20" HorizontalAlignment="Center" VerticalAlignment="Bottom"/>
+                                        <TextBox Grid.Column="1" Style="{StaticResource GeneralInput}" Width="200" Text="{Binding SelectedGroupItem.Name}" FontSize="20" HorizontalAlignment="Center" VerticalAlignment="Bottom"/>
+                                    </Grid>
+                                    
+                                    <Grid Grid.Row="1">
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="120"/>
+                                            <ColumnDefinition Width="*"/>
+                                        </Grid.ColumnDefinitions>
+                                        <TextBlock Text="Time:" FontSize="20" HorizontalAlignment="Center" VerticalAlignment="Bottom"/>
+                                        <TextBox Grid.Column="1" Style="{StaticResource GeneralInput}" Width="200" Text="{Binding SelectedGroupItem.TimeSpan}" FontSize="20" HorizontalAlignment="Center" VerticalAlignment="Bottom"/>
+                                    </Grid>
+                                <Grid Grid.Row="2">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="120"/>
+                                        <ColumnDefinition Width="*"/>
+                                    </Grid.ColumnDefinitions>
+                                    <TextBlock Text="Left:" FontSize="20" HorizontalAlignment="Center" VerticalAlignment="Bottom"/>
+                                    <TextBox Grid.Column="1" Style="{StaticResource GeneralInput}" Width="200" Text="{Binding MarginLeft, Mode=TwoWay}" FontSize="20" HorizontalAlignment="Center" VerticalAlignment="Bottom"/>
+                                </Grid>
+                                <Grid Grid.Row="3">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="120"/>
+                                        <ColumnDefinition Width="*"/>
+                                    </Grid.ColumnDefinitions>
+                                    <TextBlock Text="Top:" FontSize="20" HorizontalAlignment="Center" VerticalAlignment="Bottom"/>
+                                    <TextBox Grid.Column="1" Style="{StaticResource GeneralInput}" Width="200" Text="{Binding MarginTop, Mode=TwoWay}" FontSize="20" HorizontalAlignment="Center" VerticalAlignment="Bottom"/>
+                                </Grid>
+                                <Grid Grid.Row="3">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="120"/>
+                                        <ColumnDefinition Width="*"/>
+                                    </Grid.ColumnDefinitions>
+                                    <TextBlock Text="Background:" FontSize="20" HorizontalAlignment="Center" VerticalAlignment="Bottom"/>
+                                    <TextBox Grid.Column="1" Style="{StaticResource GeneralInput}" Width="200" Text="{Binding BackgroundColor, Mode=TwoWay}" FontSize="20" HorizontalAlignment="Center" VerticalAlignment="Bottom"/>
+                                </Grid>
+                            </Grid>
+                            </Grid>
+                        </Grid>
+                    </Border>
+                </Grid>
+            </Grid>
+        <!--</Grid>-->
+    </Border>
+</Window>

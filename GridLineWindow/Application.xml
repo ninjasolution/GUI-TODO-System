@@ -1,0 +1,45 @@
+﻿<?xml version="1.0" encoding="utf-8" ?>
+<ArrayOfGroupItem xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema">
+  <GroupItem>
+    <ID>0</ID>
+    <Url>/Resources/avatar1.png</Url>
+    <Name>1111111111</Name>
+    <IsActive>false</IsActive>
+    <TimeSpan>0001-01-01T00:00:00</TimeSpan>
+  </GroupItem>
+  <GroupItem>
+    <ID>0</ID>
+    <Url>/Resources/avatar2.png</Url>
+    <Name>222222222</Name>
+    <IsActive>false</IsActive>
+    <TimeSpan>0001-01-01T00:00:00</TimeSpan>
+  </GroupItem>
+  <GroupItem>
+    <ID>0</ID>
+    <Url>/Resources/avatar2.png</Url>
+    <Name>3333333333</Name>
+    <IsActive>false</IsActive>
+    <TimeSpan>0001-01-01T00:00:00</TimeSpan>
+  </GroupItem>
+  <GroupItem>
+    <ID>3</ID>
+    <Url>/Resources/avatar4.png</Url>
+    <Name>sfsdf</Name>
+    <IsActive>false</IsActive>
+    <TimeSpan>2021-07-24T18:19:59.6956364+10:00</TimeSpan>
+  </GroupItem>
+  <GroupItem>
+    <ID>4</ID>
+    <Url>/Resources/avatar4.png</Url>
+    <Name>sfsdf</Name>
+    <IsActive>false</IsActive>
+    <TimeSpan>2021-07-24T18:19:59.762782+10:00</TimeSpan>
+  </GroupItem>
+  <GroupItem>
+    <ID>5</ID>
+    <Url>/Resources/avatar4.png</Url>
+    <Name>sfsdf</Name>
+    <IsActive>false</IsActive>
+    <TimeSpan>2021-07-24T18:19:59.9534844+10:00</TimeSpan>
+  </GroupItem>
+</ArrayOfGroupItem>

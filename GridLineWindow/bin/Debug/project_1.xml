@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ArrayOfGroupItem xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema">
+  <GroupItem>
+    <ID>0</ID>
+    <Url>/Resources/avatar4.png</Url>
+    <Name />
+    <IsActive>false</IsActive>
+    <Margin>
+      <Left>0</Left>
+      <Top>0</Top>
+      <Right>0</Right>
+      <Bottom>0</Bottom>
+    </Margin>
+    <TimeSpan>2021-07-27T11:56:28.1245855+10:00</TimeSpan>
+  </GroupItem>
+  <GroupItem>
+    <ID>1</ID>
+    <Url>/Resources/avatar4.png</Url>
+    <Name />
+    <IsActive>false</IsActive>
+    <Margin>
+      <Left>300</Left>
+      <Top>0</Top>
+      <Right>0</Right>
+      <Bottom>0</Bottom>
+    </Margin>
+    <TimeSpan>2021-07-27T11:56:28.2571369+10:00</TimeSpan>
+  </GroupItem>
+</ArrayOfGroupItem>
